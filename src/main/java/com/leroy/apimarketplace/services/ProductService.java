@@ -51,6 +51,8 @@ public class ProductService {
 	private void updateData(Product newObj, Product obj) {
 		newObj.setName(obj.getName());
 		newObj.setDescription(obj.getDescription());
+		newObj.setFreeShipping(obj.getFreeShipping());
+		newObj.setCategory(obj.getCategory());
 	}
 
 	public Product fromDTO(ProductDTO objDTO) {

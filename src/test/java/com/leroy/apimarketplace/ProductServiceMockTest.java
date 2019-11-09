@@ -2,18 +2,17 @@ package com.leroy.apimarketplace;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -30,14 +29,14 @@ import com.leroy.apimarketplace.services.ProductService;
 @RunWith(MockitoJUnitRunner.class)
 public class ProductServiceMockTest {
 
+	@InjectMocks
+	ProductService service;
+	
 	@Mock
 	ProductRepository repo;
 
-	@InjectMocks
-	ProductService service;
-
-	@Before
-	public void init() {
+	@BeforeEach
+	public void initMocks() {
 		MockitoAnnotations.initMocks(this);
 	}
 
@@ -52,25 +51,25 @@ public class ProductServiceMockTest {
 		list.add(productTwo);
 		list.add(productThree);
 
-		when(repo.findAll()).thenReturn(list);
+		Mockito.when(repo.findAll()).thenReturn(list);
 
 		// test
 		List<Product> productList = service.findAll();
 
 		assertEquals(3, productList.size());
-		verify(repo, times(1)).findAll();
+		Mockito.verify(repo, times(1)).findAll();
 	}
 
 	@Test
 	public void findByIdTest() {
 		Product productFour = new Product(1008, "Serra de Marmore", 1, "Serra com 1400W modelo 4100", "399.00", 123123);
-		when(repo.findById(1008)).thenReturn(Optional.of(productFour));
+		Mockito.when(repo.findById(1008)).thenReturn(Optional.of(productFour));
 
 		Product product = service.findById(1008);
 
 		assertEquals("Serra de Marmore", product.getName());
-		assertEquals("123123", product.getCategory());
-		assertEquals("1", product.getCategory());
+		assertEquals(new Integer(123123), product.getCategory());
+		assertEquals(new Integer(1), product.getFreeShipping());
 	}
 
 	@Test
@@ -79,6 +78,6 @@ public class ProductServiceMockTest {
 
 		service.insert(productFive);
 
-		verify(repo, times(1)).insert(productFive);
+		Mockito.verify(repo, times(1)).insert(productFive);
 	}
 }
