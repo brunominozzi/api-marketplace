@@ -12,6 +12,12 @@ import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
+/**
+ * Classe de Configuração do SWAGGER para acesso a todas as infos da API REST
+ * 
+ * @author bruno.minozzi
+ * @since 11/11/2019
+ */
 @Configuration
 @EnableSwagger2
 public class SwaggerConfig extends WebMvcConfigurationSupport {
@@ -28,11 +34,11 @@ public class SwaggerConfig extends WebMvcConfigurationSupport {
 
   private ApiInfo metaData() {
     return new ApiInfoBuilder()
-        .title("Spring Boot REST API")
-        .description("\"Spring Boot REST API com tecnologias(POI, Mensageria RabbitMQ e Persistência em MongoDB) \"")
+        .title("REST API MARKETPLACE")
+        .description("\"REST API para cadastro de produtos com as Tecnologias:(Spring Boot, POI, Mensageria RabbitMQ e Persistência em MongoDB) \"")
         .version("1.0.0")
         .license("Apache License Version 2.0")
-        .licenseUrl("https://www.apache.org/licenses/LICENSE-2.0\"")
+        .licenseUrl("https://www.apache.org/licenses/LICENSE-2.0")
         .build();
   }
 

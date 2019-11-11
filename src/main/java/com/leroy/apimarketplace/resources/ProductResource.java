@@ -37,7 +37,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import io.swagger.jaxrs.config.BeanConfig;
 
 /**
  * Classe Controller com características RESTful para manipulação 
@@ -50,18 +49,6 @@ import io.swagger.jaxrs.config.BeanConfig;
 @RequestMapping(value="/products")
 @Api(value = "/products", description = "API Marketplace para cadastro de produtos")
 public class ProductResource {
-	
-	public ProductResource() {
-	    BeanConfig conf = new BeanConfig();
-	    conf.setTitle("API Marketplace");
-	    conf.setDescription("Cadastro de Produtos");
-	    conf.setVersion("1.0.0");
-	    conf.setHost("localhost:8080");
-	    conf.setBasePath("/apimarketplace/products");
-	    conf.setSchemes(new String[] { "http" });
-	    conf.setResourcePackage("com.leroy.apimarketplace.resources");
-	    conf.setScan(true);
-	  }
 	
 	public static final Logger LOGGER = LogManager.getLogger(ProductResource.class);
 	
@@ -115,6 +102,16 @@ public class ProductResource {
 		return ResponseEntity.noContent().build();
 	}
 	
+	@RequestMapping(value="/status", method=RequestMethod.GET)
+	@ApiOperation(value = "Verifica o processamento da planilha, 'TRUE' = sucesso e 'FALSE' = falha.")
+	@ApiResponses({ @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Pesquisa de processamento realizada com sucesso") })
+	public ResponseEntity<Boolean> statusProcessamento(){
+		Boolean statusProcessamento = Boolean.TRUE;
+		List<Product> listProduct =  service.findAll();
+		statusProcessamento = !listProduct.isEmpty();
+		return new ResponseEntity<Boolean>(statusProcessamento, HttpStatus.OK);
+	}
+	
 	/**
 	 * Método responsável pela requisição Post para envio e processamento de planilha de produtos.
 	 * 
@@ -128,14 +125,15 @@ public class ProductResource {
 	public ResponseEntity<String> uploadData(@RequestParam("productFile") MultipartFile productFile) throws Exception {
 		LOGGER.info("ResponseEntity.uploadData() - INÍCIO Leitura productFile '" + productFile.getOriginalFilename()+ "'");
 	
+		//Passo 1 de 3: Leitura de planilha e transformação em Lista de Objetos 'Product'
 		File productXlsx = FileUtil.convertMultipartFileToFile(productFile);
 		List<Product> listProducts = new ArrayList<Product>(); 
 		listProducts = FileUtil.readXLSXFile(productXlsx);
 
-		//ForEach produz uma mensagem por produto cadastrado na planilha.
+		//Passo 2 de 3: ForEach produz uma mensagem por produto cadastrado na planilha.
 		listProducts.stream().forEach(product -> this.produceMessage(EXCHANGE_NAME, QUEUE_NAME, ParserUtil.parseObjectToJson(product)));
 		
-		// ForEach garante via threads que cada mensagem produzida no passo anterior seja devidamente recebida e processada.
+		//Passo 3 de 3: ForEach garante via threads que cada mensagem produzida no passo anterior seja devidamente recebida e processada.
 		listProducts.stream().forEach(product -> {
 			new Thread(() -> {
 				try {
