@@ -177,5 +177,11 @@ public class Product implements Serializable{
 		return true;
 	}
 
+	@Override
+	public String toString() {
+		return "Product [id=" + id + ", name=" + name + ", freeShipping=" + freeShipping + ", description="
+				+ description + ", price=" + price + ", category=" + category + "]";
+	}
+
 
 }
