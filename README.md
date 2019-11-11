@@ -60,7 +60,7 @@ Acesse swagger-ui:  http://localhost:8080/swagger-ui.html#/product-resource/
 
 ### Processamento via Postman
 
-Favor configurar Body(form-data) da chamada POST com Key 'productFile' selecionando a planilha conforme imagem abaixo:<br><br>
+Favor configurar Body(form-data) da chamada POST com Key 'productFile' selecionando a planilha conforme abaixo:<br><br>
 ![process_postman](https://user-images.githubusercontent.com/56572201/68627452-8b8f2b80-04bc-11ea-9967-03c984afd5aa.png)
 
 
