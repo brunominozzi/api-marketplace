@@ -55,34 +55,6 @@ public class ProductResource {
 	
 	private final static String QUEUE_NAME = "product";
 	
-	@PostMapping
-	public ResponseEntity<String> uploadData(@RequestParam("productFile") MultipartFile productFile) throws Exception {
-
-		File productXlsx = FileUtil.convertMultipartFileToFile(productFile);
-		
-		List<Product> listProducts = new ArrayList<Product>(); 
-		listProducts = FileUtil.readXLSXFile(productXlsx);
-		
-		listProducts.stream().forEach(product -> {
-			try {
-				this.produceMessage(EXCHANGE_NAME, QUEUE_NAME, ParserUtil.parseObjectToJson(product));
-			} catch (Exception e) {
-				System.out.println(" [x] Erro no processamento do Produto '" + product.getId() + "'");
-				return;
-			}
-		});
-		
-		listProducts.stream().forEach(product -> {
-			try {
-				this.consumeMessage(QUEUE_NAME);
-			} catch (Exception e) {
-				System.out.println(" [x] Erro no consumo do fila Product '");
-				return;
-			}
-		});
-        
-		return new ResponseEntity<String>(productFile.getOriginalFilename(), HttpStatus.OK);
-	}
 
 	@RequestMapping(method=RequestMethod.GET)
 	public ResponseEntity<List<ProductDTO>> findAll(){
@@ -116,13 +88,53 @@ public class ProductResource {
 	}
 	
 	/**
-	 * Método responsável por inserir mensagem no RabbitMQ
+	 * Método responsável pela requisição Post para envio e processamento de planilha de produtos.
+	 * 
+	 * @param productFile
+	 * @return
+	 * @throws Exception
+	 */
+	@PostMapping
+	public ResponseEntity<String> uploadData(@RequestParam("productFile") MultipartFile productFile) throws Exception {
+		LOGGER.info("ResponseEntity.uploadData() - INÍCIO processamento productFile '" + productFile.getOriginalFilename()+ "'");
+	
+		File productXlsx = FileUtil.convertMultipartFileToFile(productFile);
+		
+		List<Product> listProducts = new ArrayList<Product>(); 
+		listProducts = FileUtil.readXLSXFile(productXlsx);
+		
+		//ForEach produz uma mensagem por produto cadastrado na planilha.
+		listProducts.stream().forEach(product -> this.produceMessage(EXCHANGE_NAME, QUEUE_NAME, ParserUtil.parseObjectToJson(product)));
+		
+		// ForEach garante via threads que cada mensagem produzida no passo anterior seja devidamente recebida e processada.
+		listProducts.stream().forEach(product -> {
+			new Thread(() -> {
+				try {
+					Thread.sleep(6000);
+				} catch (InterruptedException e) {
+					LOGGER.info("ResponseEntity.uploadData() - FALHA Thread de Consumo de fila Interrompida!'");
+					return;
+				}
+				/**
+				 * Chamada ao Método responsável por consumir fila efetuar insert na coleção de
+				 * produtos em BD.
+				 */
+				this.consumeMessage(QUEUE_NAME);
+			}).start();
+		});
+		
+		LOGGER.info(" ResponseEntity.uploadData() - FINAL -> Disparadas Threads de processamento de file: '" + productFile.getOriginalFilename()+ "'");
+		return new ResponseEntity<String>(productFile.getOriginalFilename(), HttpStatus.OK);
+	}
+	
+	/**
+	 * Método privado responsável por inserir mensagem no RabbitMQ
 	 * 
 	 * @param exchangeName
 	 * @param queueName
 	 * @param jsonObject
 	 */
-	public void produceMessage(final String exchangeName, final String queueName, String jsonObject){
+	private void produceMessage(final String exchangeName, final String queueName, String jsonObject){
 		
         ConnectionFactory factory = new ConnectionFactory();
        // factory.setHost("localhost");
@@ -135,20 +147,20 @@ public class ProductResource {
             channel.queueDeclare(queueName, true, false, false, mapArgumentos);
             String message = jsonObject;
             channel.basicPublish(exchangeName, "", null, message.getBytes("UTF-8"));
-            System.out.println(" [x] Sent '" + message + "'");
+            LOGGER.info("ResponseEntity.produceMessage() - SENT '" + message + "'");
         }catch(Exception e) {
         	e.printStackTrace();
         }
 	}
 	
 	/**
-	 * Método responsável por consumir fila de produtos no RabbitMQ
-	 *  e efetuar insert na coleção de produtos em BD.
+	 * Método privado responsável por consumir fila de produtos no RabbitMQ
+	 *  e efetuar insert na coleção de produtos no MongoDB.
 	 * 
 	 * @param queueName
 	 * @throws Exception
 	 */
-	public void consumeMessage(final String queueName) throws Exception{
+	private void consumeMessage(final String queueName) {
 
 		Map<String,Object> mapArgumentos = new HashedMap<String, Object>();
 	    mapArgumentos.put("x-queue-type", "classic");
@@ -159,16 +171,18 @@ public class ProductResource {
 	             Channel channel = connection.createChannel()) {
 	
 		    channel.queueDeclare(queueName, true, false, false, mapArgumentos);
-		    System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
+		    LOGGER.info("ResponseEntity.consumeMessage() - 'Waiting for messages!");
 	
 		    DeliverCallback deliverCallback = (consumerTag, delivery) -> {
 		        String jsonSource = new String(delivery.getBody(), "UTF-8");
 		        Product product = jacksonObjectMapper.readValue(jsonSource, Product.class);
 		        service.insert(product);
-		        System.out.println(" [x] Received '" + product + "'");
+		        LOGGER.info("ResponseEntity.consumeMessage() - RECEIVED '" + product + "'");
 		    };
 		    channel.basicConsume(queueName, true, deliverCallback, consumerTag -> { });
-	    }
+	    } catch (Exception e) {
+			e.printStackTrace();
+		} 
 	}
 	
 }
