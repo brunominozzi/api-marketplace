@@ -1,6 +1,7 @@
 package com.leroy.apimarketplace.resources;
 
 import java.io.File;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,12 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.jaxrs.config.BeanConfig;
+
 /**
  * Classe Controller com características RESTful para manipulação 
  * das requisições relacionadas a 'Produtos'.
@@ -41,7 +48,20 @@ import com.rabbitmq.client.DeliverCallback;
  */
 @RestController
 @RequestMapping(value="/products")
+@Api(value = "/products", description = "API Marketplace para cadastro de produtos")
 public class ProductResource {
+	
+	public ProductResource() {
+	    BeanConfig conf = new BeanConfig();
+	    conf.setTitle("API Marketplace");
+	    conf.setDescription("Cadastro de Produtos");
+	    conf.setVersion("1.0.0");
+	    conf.setHost("localhost:8080");
+	    conf.setBasePath("/apimarketplace/products");
+	    conf.setSchemes(new String[] { "http" });
+	    conf.setResourcePackage("com.leroy.apimarketplace.resources");
+	    conf.setScan(true);
+	  }
 	
 	public static final Logger LOGGER = LogManager.getLogger(ProductResource.class);
 	
@@ -57,6 +77,8 @@ public class ProductResource {
 	
 
 	@RequestMapping(method=RequestMethod.GET)
+	@ApiOperation(value = "Efetua a pesquisa de todos os produtos cadastrados no BD")
+	@ApiResponses({ @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Pesquisa realizada com sucesso") })
 	public ResponseEntity<List<ProductDTO>> findAll(){
 		List<Product> listProduct =  service.findAll();
 		List<ProductDTO> listProductDto = listProduct.stream().map(x -> new ProductDTO(x)).collect(Collectors.toList());
@@ -65,6 +87,8 @@ public class ProductResource {
 	}
 	
 	@RequestMapping(value="/{id}", method=RequestMethod.GET)
+	@ApiOperation(value = "Efetua a pesquisa de produto por Id")
+	@ApiResponses({ @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Pesquisa realizada com sucesso") })
 	public ResponseEntity<ProductDTO> findById(@PathVariable Integer id){
 		Product obj = service.findById(id);
 		
@@ -72,6 +96,8 @@ public class ProductResource {
 	}
 	
 	@RequestMapping(value="/{id}", method=RequestMethod.DELETE)
+	@ApiOperation(value = "Deleta o registro da Base através do Id")
+	@ApiResponses({ @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Produto apagado com sucesso") })
 	public ResponseEntity<Void> delete(@PathVariable Integer id){
 		service.delete(id);
 		
@@ -79,6 +105,8 @@ public class ProductResource {
 	}
 	
 	@RequestMapping(value="/{id}",method=RequestMethod.PUT)
+	@ApiOperation(value = "Efetua a atualização do produto através do Id")
+	@ApiResponses({ @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Alteração realizada com sucesso") })
 	public ResponseEntity<Void> update(@RequestBody ProductDTO objDTO, @PathVariable Integer id){
 		Product obj = service.fromDTO(objDTO);
 		obj.setId(id);
@@ -95,14 +123,15 @@ public class ProductResource {
 	 * @throws Exception
 	 */
 	@PostMapping
+	@ApiOperation(value = "Efetua o upload e processamento da Planilha de Produtos")
+	@ApiResponses({ @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Processamento realizado com sucesso") })
 	public ResponseEntity<String> uploadData(@RequestParam("productFile") MultipartFile productFile) throws Exception {
-		LOGGER.info("ResponseEntity.uploadData() - INÍCIO processamento productFile '" + productFile.getOriginalFilename()+ "'");
+		LOGGER.info("ResponseEntity.uploadData() - INÍCIO Leitura productFile '" + productFile.getOriginalFilename()+ "'");
 	
 		File productXlsx = FileUtil.convertMultipartFileToFile(productFile);
-		
 		List<Product> listProducts = new ArrayList<Product>(); 
 		listProducts = FileUtil.readXLSXFile(productXlsx);
-		
+
 		//ForEach produz uma mensagem por produto cadastrado na planilha.
 		listProducts.stream().forEach(product -> this.produceMessage(EXCHANGE_NAME, QUEUE_NAME, ParserUtil.parseObjectToJson(product)));
 		
@@ -147,7 +176,7 @@ public class ProductResource {
             channel.queueDeclare(queueName, true, false, false, mapArgumentos);
             String message = jsonObject;
             channel.basicPublish(exchangeName, "", null, message.getBytes("UTF-8"));
-            LOGGER.info("ResponseEntity.produceMessage() - SENT '" + message + "'");
+            LOGGER.info("ResponseEntity.produceMessage() - SEND TO QUEUE: '" + message + "'");
         }catch(Exception e) {
         	e.printStackTrace();
         }
