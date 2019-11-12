@@ -11,26 +11,31 @@ Desenvolver	 uma API RESTful que:
 
 ### Pré-Requisitos
 
-É necessário ter instalado em sua estação:
+É necessário ter instalado em seu ambiente:
 
 * [MongoDB](https://www.mongodb.com/) - Banco de Dados utilizado.
 * [RabbitMQ](https://www.rabbitmq.com/) - Servidor de Mensageria.
 * [Maven](https://maven.apache.org/) - Controle de Dependências do projeto.
 * [Java 8](https://www.java.com/pt_BR/download/) - Java versão 8 ou superior.
 
-### Configurações básicas
+### Configurações do Ambiente
 
-Criar database MongoDB e configurar nova Exchange e Queue RabbitMQ com as infos abaixo:
-
+Criar database MongoDB com as infos: 
 * [New Database MongoDB]
 	- Database Name: marketplace
 	- Collection Name: product
 
+Criar nova Exchange e Queue RabbitMQ com as infos:
 * [New Exchange and Queue RabbitMQ]
 	- Exchange Name: marketplace
 	- Queue Name: product
 
-OBS: Se necessário, consultar sessão de *Apoio Técnico*
+### Apoio Técnico
+
+* [Start/Create RabbitMQ] -> (http://coderjony.com/blogs/how-to-enable-rabbitmq-management-plugin-in-windows/)
+
+* [Start/Create MongoDB] -> https://docs.mongodb.com/compass/master/databases/	
+
 
 ### Instalar e executar o projeto
 
@@ -53,22 +58,16 @@ A aplicação api-marketplace http://localhost:8080/products está rodando e pro
 
 ### Documentação API REST
 
-O projeto já está configurado com swagger para documentação e detalhamento dos métodos disponíveis via Rest. 
+O projeto está configurado com swagger para documentação e detalhamento dos métodos disponíveis via Rest. 
 
 Acesse swagger-ui:  http://localhost:8080/swagger-ui.html#/product-resource/
 
 
 ### Processamento via Postman
 
-Favor configurar Body(form-data) da chamada POST com Key 'productFile' selecionando a planilha conforme abaixo:<br><br>
+Configurar Body(form-data) da chamada <b>POST</b> com Key 'productFile' selecionando a planilha conforme abaixo:<br><br>
 ![process_postman](https://user-images.githubusercontent.com/56572201/68627452-8b8f2b80-04bc-11ea-9967-03c984afd5aa.png)
 
-
-### Apoio Técnico
-
-* [Start/Create RabbitMQ] -> (http://coderjony.com/blogs/how-to-enable-rabbitmq-management-plugin-in-windows/)
-
-* [Start/Create MongoDB] -> https://docs.mongodb.com/compass/master/databases/	
 
 ### TODO
 
@@ -78,3 +77,9 @@ Favor configurar Body(form-data) da chamada POST com Key 'productFile' seleciona
 
 #### Otimização do controle da mensageria
  - Melhorar o tratamento de Threads para otimizar a Concorrência do consumo da Queue.
+
+#### Instalação do Projeto com Docker
+ - Realizar os steps de configuração do projeto com Docker, automatizando o processo de instalação da aplicação e recursos necessários.
+
+### Autor
+* [Bruno Minozzi](https://github.com/brunominozzi)
